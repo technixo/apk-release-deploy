@@ -14,8 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
-
 import os
 import argparse
 import requests
@@ -88,6 +86,7 @@ def upload_to_dropbox(target_file_name, source_file, dropbox_token, dropbox_fold
     r = requests.post(DROPBOX_UPLOAD_URL, data=open(source_file, 'rb'), headers=headers)
 
     if r.status_code != requests.codes.ok:
+        print(r)
         print("Failed: upload file to Dropbox: {errcode}".format(errcode=r.status_code))
         return None
 
@@ -156,22 +155,21 @@ def get_app(release_dir):
     return app_version, app_file
 
 
-def get_target_file_name(app_name, app_version):
+def get_target_file_name(branch_name):
     '''Generate file name for released apk, using app name and version:
     app_name - MyApp
     version - 1.03
     result: myapp_1_03.apk
     
     Args:
-        app_name (str): App name.
-        app_version (str): App version.
+        branch_name (str): Branch name.
 
     Returns:
         str: App file name.
     '''
-    app_name = app_name.lower()
-    app_version = app_version.replace('.', '_')
-    return '{name}_{version}.apk'.format(name=app_name, version=app_version).replace(' ','')
+    app_name = branch_name.replace('.', '_')
+    app_name = app_name.replace('/', '_')
+    return '{name}.apk'.format(name=app_name).replace(' ','')
 
 
 def get_changes(change_log_path):
@@ -192,6 +190,19 @@ def get_changes(change_log_path):
     latest_version_changes = re.sub('^#.*\n?', '', latest_version_changes, flags=re.MULTILINE)
 
     return latest_version_changes
+
+def send_workplace_message(bot_token, receive_id, link_url):
+    url = 'https://graph.facebook.com/v8.0/me/messages?access_token={token}'.format(token = bot_token)
+    r = requests.post(url, json = {
+      "messaging_type": "UPDATE",
+      "recipient": {
+        "id": str(receive_id)
+      },
+      "message": {
+        "text": 'Download link url is available. {link}'.format(link = link_url)
+      }
+    })
+    return r.status_code == requests.codes.ok
 
 
 def get_email(app_name, app_version, app_url, changes, template_file_path):
@@ -242,41 +253,44 @@ def get_email(app_name, app_version, app_url, changes, template_file_path):
 
 
 if __name__ == '__main__':
+
     # Command line arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('--release.dir', dest='release_dir', help='path to release folder', required=True)
-    parser.add_argument('--app.name', dest='app_name', help='app name that will be used as file name', required=True)
-    parser.add_argument('--changelog.file', dest='changelog_file', help='path to changelog file', required=True)
-    parser.add_argument('--template.file', dest='template_file', help='path to email template file', required=True)
+    parser.add_argument('--release.path', dest='release_path', help='path to release folder', required=True)
+    parser.add_argument('--branch', dest='branch_name', help='app name that will be used as file name', required=True)
     parser.add_argument('--dropbox.token', dest='dropbox_token', help='dropbox access token', required=True)
     parser.add_argument('--dropbox.folder', dest='dropbox_folder', help='dropbox target folder', required=True)
-    parser.add_argument('--zapier.hook', dest='zapier_hook', help='zapier email web hook', required=True)
-    parser.add_argument('--email.to', dest='email_to', help='email recipients', required=True)
+    parser.add_argument('--workplace.bot_token', dest='bot_token', help='bot_token', required=True)
+    parser.add_argument('--message.to', dest='message_to', help='message recipients', required=True)
 
     options = parser.parse_args()
 
     # Extract app version and file
-    app_version, app_file = get_app(options.release_dir)
-    if app_version == None or app_file == None:
-        exit(OUTPUT_FILE_PARSING_ERROR)
+    # app_version, app_file = get_app(options.release_dir)
+    # if app_version == None or app_file == None:
+    #     exit(OUTPUT_FILE_PARSING_ERROR)
+
     
-    target_app_file = get_target_file_name(options.app_name, app_version)
+    target_app_file = get_target_file_name(options.branch_name)
 
     # Upload app file and get shared url
-    file_url = upload_to_dropbox(target_app_file, app_file, options.dropbox_token, options.dropbox_folder)
+    file_url = upload_to_dropbox(target_app_file, options.release_path, options.dropbox_token, options.dropbox_folder)
     if file_url == None:
         exit(DROPBOX_ERROR_CODE)
+
+    print(file_url)
+    send_workplace_message(options.bot_token, options.message_to, file_url)
     
     # Extract latest changes
-    latest_changes = get_changes(options.changelog_file)
-    if latest_changes == None:
-        exit(CHANGES_ERROR_CODE)
+    # latest_changes = get_changes(options.changelog_file)
+    # if latest_changes == None:
+    #     exit(CHANGES_ERROR_CODE)
     
-    # Compose email subject and body
-    subject, body = get_email(options.app_name, app_version, file_url, latest_changes, options.template_file)
-    if subject == None or body == None:
-        exit(TEMPLATE_ERROR_CODE)
-    
-    # Send email with release data
-    if not send_email(options.zapier_hook, options.email_to, subject, body):
-        exit(ZAPIER_ERROR_CODE)
+    # # Compose email subject and body
+    # subject, body = get_email(options.app_name, app_version, file_url, latest_changes, options.template_file)
+    # if subject == None or body == None:
+    #     exit(TEMPLATE_ERROR_CODE)
+    #
+    # # Send email with release data
+    # if not send_email(options.zapier_hook, options.email_to, subject, body):
+    #     exit(ZAPIER_ERROR_CODE)
