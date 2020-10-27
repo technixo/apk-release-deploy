@@ -191,7 +191,7 @@ def get_changes(change_log_path):
 
     return latest_version_changes
 
-def send_workplace_message(bot_token, receive_id, link_url):
+def send_workplace_message(bot_token, receive_id, link_url, branch_name):
     url = 'https://graph.facebook.com/v8.0/me/messages?access_token={token}'.format(token = bot_token)
     r = requests.post(url, json = {
       "messaging_type": "UPDATE",
@@ -199,7 +199,7 @@ def send_workplace_message(bot_token, receive_id, link_url):
         "id": str(receive_id)
       },
       "message": {
-        "text": 'Download link url is available. {link}'.format(link = link_url)
+        "text": 'The {branch_name} has built successful\nDownload link url is available. {link}'.format(link = link_url, branch_name=branch_name)
       }
     })
     return r.status_code == requests.codes.ok
@@ -279,7 +279,7 @@ if __name__ == '__main__':
         exit(DROPBOX_ERROR_CODE)
 
     print(file_url)
-    send_workplace_message(options.bot_token, options.message_to, file_url)
+    send_workplace_message(options.bot_token, options.message_to, file_url, options.branch_name)
     
     # Extract latest changes
     # latest_changes = get_changes(options.changelog_file)
