@@ -202,6 +202,10 @@ def send_workplace_message(bot_token, receive_id, link_url, branch_name):
         "text": 'The branch `{branch_name}` has built successful\nDownload link url is available. {link}'.format(link = link_url, branch_name=branch_name)
       }
     })
+    if r.status_code != requests.codes.ok:
+        print(r.content)
+        print("Failed: send mesage to workplace: {errcode}".format(errcode=r.status_code))
+
     return r.status_code == requests.codes.ok
 
 
