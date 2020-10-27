@@ -196,7 +196,7 @@ def send_workplace_message(bot_token, receive_id, link_url, branch_name):
     r = requests.post(url, json = {
       "messaging_type": "UPDATE",
       "recipient": {
-        "id": str(receive_id)
+        "thread_key": str(receive_id)
       },
       "message": {
         "text": 'The branch `{branch_name}` has built successful\nDownload link url is available. {link}'.format(link = link_url, branch_name=branch_name)
