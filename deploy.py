@@ -199,7 +199,7 @@ def send_workplace_message(bot_token, receive_id, link_url, branch_name):
         "id": str(receive_id)
       },
       "message": {
-        "text": 'The {branch_name} has built successful\nDownload link url is available. {link}'.format(link = link_url, branch_name=branch_name)
+        "text": 'The branch `{branch_name}` has built successful\nDownload link url is available. {link}'.format(link = link_url, branch_name=branch_name)
       }
     })
     return r.status_code == requests.codes.ok
