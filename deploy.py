@@ -262,7 +262,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--release.path', dest='release_path', help='path to release folder', required=True)
     parser.add_argument('--branch', dest='branch_name', help='app name that will be used as file name', required=True)
-    parser.add_argument('--commit_message', dest='commit_message', help='Commit Message', required=False)
+    parser.add_argument('--commit.message', dest='commit_message', help='Commit Message', required=False)
     parser.add_argument('--dropbox.token', dest='dropbox_token', help='dropbox access token', required=True)
     parser.add_argument('--dropbox.folder', dest='dropbox_folder', help='dropbox target folder', required=True)
     parser.add_argument('--workplace.bot_token', dest='bot_token', help='bot_token', required=True)
