@@ -191,7 +191,7 @@ def get_changes(change_log_path):
 
     return latest_version_changes
 
-def send_workplace_message(bot_token, receive_id, link_url, branch_name):
+def send_workplace_message(bot_token, receive_id, link_url, branch_name, commit_message=''):
     url = 'https://graph.facebook.com/v8.0/me/messages?access_token={token}'.format(token = bot_token)
     r = requests.post(url, json = {
       "messaging_type": "UPDATE",
@@ -199,7 +199,7 @@ def send_workplace_message(bot_token, receive_id, link_url, branch_name):
         "thread_key": str(receive_id)
       },
       "message": {
-        "text": 'The branch `{branch_name}` has built successful\nDownload link url is available. {link}'.format(link = link_url, branch_name=branch_name)
+        "text": 'The branch `{branch_name}` has built successful\nCommit message: {commit_message}\nDownload link url is available. {link}'.format(link = link_url, branch_name=branch_name, commit_message=commit_message)
       }
     })
     if r.status_code != requests.codes.ok:
@@ -262,6 +262,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--release.path', dest='release_path', help='path to release folder', required=True)
     parser.add_argument('--branch', dest='branch_name', help='app name that will be used as file name', required=True)
+    parser.add_argument('--commit_message', dest='commit_message', help='Commit Message', required=False)
     parser.add_argument('--dropbox.token', dest='dropbox_token', help='dropbox access token', required=True)
     parser.add_argument('--dropbox.folder', dest='dropbox_folder', help='dropbox target folder', required=True)
     parser.add_argument('--workplace.bot_token', dest='bot_token', help='bot_token', required=True)
@@ -283,7 +284,7 @@ if __name__ == '__main__':
         exit(DROPBOX_ERROR_CODE)
 
     print(file_url)
-    send_workplace_message(options.bot_token, options.message_to, file_url, options.branch_name)
+    send_workplace_message(options.bot_token, options.message_to, file_url, options.branch_name, options.commit_message)
     
     # Extract latest changes
     # latest_changes = get_changes(options.changelog_file)
